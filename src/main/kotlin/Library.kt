@@ -1,6 +1,7 @@
 import constants.CardType
 import constants.Color
-import data.AlphaSet
+import data.ALPHA_SET
+import data.getCopy
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 
@@ -9,6 +10,7 @@ class Library {
     var cards: ArrayList<Card> = ArrayList()
 
     fun create() {
+        var myList: MutableList<Card> = getCopy()
         val cardCount = HashMap<String, Int>()
         val range = 0..ThreadLocalRandom.current().nextInt(17, 27)
         for (i in range) {
@@ -16,7 +18,7 @@ class Library {
         }
 
         while (cards.size < 60) {
-            val card = getRandomCard()
+            val card = getRandomCard(myList)
             cardCount[card.name] = if (!cardCount.containsKey(card.name)) {
                 cards.add(card)
                 1
@@ -26,8 +28,8 @@ class Library {
                     cards.add(card)
                     count.plus(1)
                 } else {
+                    myList.remove(card)
                     count
-                    // Remove card from list of cards
                 }
             }
         }
@@ -39,6 +41,6 @@ class Library {
     }
 }
 
-fun getRandomCard(): Card {
-    return AlphaSet[ThreadLocalRandom.current().nextInt(AlphaSet.size)]
+fun getRandomCard(myList: MutableList<Card>): Card {
+    return myList[ThreadLocalRandom.current().nextInt(myList.size)]
 }

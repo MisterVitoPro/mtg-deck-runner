@@ -4,7 +4,7 @@ import Card
 import constants.CardType
 import constants.Color
 
-val AlphaSet: List<Card> = arrayListOf(
+val ALPHA_SET: List<Card> = arrayListOf(
         Card("Dragon Whelp", CardType.CREATURE, Color.RED,4, 2,3),
         Card("Dwarven Demolition Team", CardType.CREATURE, Color.RED, 3, 1,1),
         Card("Dwarven Warriors", CardType.CREATURE, Color.RED, 3, 1,1),
@@ -15,3 +15,7 @@ val AlphaSet: List<Card> = arrayListOf(
         Card("Granite Gargoyle", CardType.CREATURE, Color.RED,3, 2,2),
         Card("Lightning Bolt", CardType.INSTANT, Color.RED,1, 0,0)
 )
+
+fun getCopy(): MutableList<Card> {
+    return ALPHA_SET.toMutableList()
+}
