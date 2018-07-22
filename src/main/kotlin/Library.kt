@@ -1,6 +1,5 @@
 import constants.CardType
 import constants.Color
-import data.ALPHA_SET
 import data.getCopy
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
@@ -33,7 +32,10 @@ class Library {
                 }
             }
         }
-        // Shuffle cards
+        val frequenciesByFirstChar = cards.groupingBy { it.name }.eachCount()
+        println(frequenciesByFirstChar)
+
+        Collections.shuffle(cards)
     }
 
     fun draw(): Card {
