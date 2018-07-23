@@ -1,23 +1,32 @@
 import constants.CardType
 import java.util.*
 
-class Player {
+class Player(val name: String, val library: Library = Library()) {
 
     var life: Int = 20
     var manaPool: Int = 0
     var hand: MutableList<Card> = mutableListOf()
-    val library: Library = Library()
     private val graveyard: MutableList<Card> = mutableListOf()
     var battleField: MutableList<Card> = mutableListOf()
 
     init {
-        library.create()
+        //println("- $name Deck -")
+        //library.printLibrary()
+    }
+
+    fun drawOpeningHand(cardsToDraw: Int) {
+        if (cardsToDraw > 5 && !library.cards.subList(0, cardsToDraw).stream().allMatch { card -> card.type == CardType.LAND }) {
+            library.shuffle()
+            drawOpeningHand(cardsToDraw - 1)
+        } else {
+            drawFromLibrary(cardsToDraw)
+        }
     }
 
     fun drawFromLibrary(n: Int) {
         for (i in 1..n)
             hand.add(library.draw())
-        println("Player Hand: ${player.hand.map { card -> card.name }}")
+        //println("Player Hand: ${hand.map { card -> card.name }.sorted()}")
     }
 
     fun discard(card: Card) {
@@ -41,11 +50,13 @@ class Player {
     fun playCard(card: Card) {
         hand.remove(card)
         battleField.add(card)
-        println("Played ${card.name}")
+        //println("Played ${card.printShort()}")
     }
 
     fun tapLands() {
         manaPool = battleField.stream().filter { c -> c.type == CardType.LAND }.count().toInt()
-        println("Player's Mana Pool = $manaPool")
+        //println("Player's Mana Pool = $manaPool")
     }
+
+
 }
