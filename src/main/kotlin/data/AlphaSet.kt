@@ -14,15 +14,22 @@ val ALPHA_SET: List<Card> = arrayListOf(
         Card("Goblin Balloon Brigade", CardType.CREATURE, Color.RED, 1, 1, 1),
         Card("Goblin King", CardType.CREATURE, Color.RED, 3, 2, 2),
         Card("Granite Gargoyle", CardType.CREATURE, Color.RED, 3, 2, 2),
+        Card("Gray Ogre", CardType.CREATURE, Color.RED, 3, 2, 2),
+        Card("Hill Giant", CardType.CREATURE, Color.RED, 4, 3, 3),
+        Card("Hurloon Minotaur", CardType.CREATURE, Color.RED, 3, 2, 3),
+        Card("Ironclaw Orcs", CardType.CREATURE, Color.RED, 2, 2, 2),
         Card("Lightning Bolt", CardType.INSTANT, Color.RED, 1, 3),
-        Card("Shock", CardType.INSTANT, Color.RED, 1, 2),
-        Card("Gray Ogre", CardType.INSTANT, Color.RED, 3, 2, 2),
-        Card("Hill Giant", CardType.INSTANT, Color.RED, 4, 3, 3),
+        Card("Mons's Goblin Raiders", CardType.CREATURE, Color.RED, 1, 1, 1),
+        Card("Uthden Troll", CardType.CREATURE, Color.RED, 3, 2, 2),
         Card("Mountain", CardType.LAND, Color.LAND)
 )
 
 fun getCopy(): MutableList<Card> {
     return ALPHA_SET.toMutableList()
+}
+
+fun getRandomLand(): Card {
+    return Card("Mountain", CardType.LAND, Color.LAND)
 }
 
 fun getRandomCard(): Card {

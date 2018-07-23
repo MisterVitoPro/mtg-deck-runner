@@ -1,6 +1,5 @@
-import constants.CardType
-import constants.Color
 import data.getCopy
+import data.getRandomLand
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 
@@ -10,9 +9,9 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
         if (cards.isEmpty()) {
             val myList: MutableList<Card> = getCopy()
             val cardCount = HashMap<String, Int>()
-            val range = 0..ThreadLocalRandom.current().nextInt(17, 27)
+            val range = 0..ThreadLocalRandom.current().nextInt(17, 25)
             for (i in range) {
-                cards.add(Card("Mountain", CardType.LAND, Color.LAND))
+                cards.add(getRandomLand())
             }
 
             while (cards.size < 60) {
@@ -49,12 +48,12 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
         print("\n")
     }
 
-    fun sortCards(){
+    fun sortCards() {
         cards.sortBy { it.name }
     }
 
     fun shuffle() {
-        Collections.shuffle(cards)
+        cards.shuffle()
     }
 }
 

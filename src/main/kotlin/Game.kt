@@ -13,7 +13,7 @@ class Game(library: Library) {
         while (enemyPlayer.life > 0) {
 
             currentTurn++
-            println("\nTurn #$currentTurn")
+            //println("\nTurn #$currentTurn")
 
             untapStep()
             upkeepStep()
@@ -23,13 +23,13 @@ class Game(library: Library) {
             mainPhasePostCombat()
             endStep()
 
-            if(currentTurn >= 12){
-                println("\nDeck not good enough. Ending on turn $currentTurn")
+            if (currentTurn >= 12) {
+                //println("\nDeck not good enough. Ending on turn $currentTurn")
                 return currentTurn
             }
         }
 
-        println("\nDeck won on turn $currentTurn")
+        // println("\nDeck won on turn $currentTurn")
         return currentTurn
     }
 
@@ -97,7 +97,7 @@ class Game(library: Library) {
         player.battleField
                 .filter { card -> card.type != CardType.LAND }
                 .forEach { card ->
-                    println("Attacking with ${card.name} for ${card.attack}")
+                    ///println("Attacking with ${card.name} for ${card.attack}")
                     totalDamage += when (card.type) {
                         CardType.CREATURE -> card.attack
                         CardType.INSTANT -> card.attack
@@ -109,6 +109,6 @@ class Game(library: Library) {
                 }
         if (totalDamage > 0)
             enemyPlayer.life -= totalDamage
-        println("Enemy HP: ${enemyPlayer.life}, Damaged for: $totalDamage")
+        //println("Enemy HP: ${enemyPlayer.life}, Damaged for: $totalDamage")
     }
 }
