@@ -3,6 +3,7 @@ package data
 import Card
 import constants.CardType
 import constants.Color
+import java.util.concurrent.ThreadLocalRandom
 
 val ALPHA_SET: List<Card> = arrayListOf(
         Card("Dragon Whelp", CardType.CREATURE, Color.RED, 4, 2, 3),
@@ -16,9 +17,14 @@ val ALPHA_SET: List<Card> = arrayListOf(
         Card("Lightning Bolt", CardType.INSTANT, Color.RED, 1, 3),
         Card("Shock", CardType.INSTANT, Color.RED, 1, 2),
         Card("Gray Ogre", CardType.INSTANT, Color.RED, 3, 2, 2),
-        Card("Hill Giant", CardType.INSTANT, Color.RED, 4, 3, 3)
+        Card("Hill Giant", CardType.INSTANT, Color.RED, 4, 3, 3),
+        Card("Mountain", CardType.LAND, Color.LAND)
 )
 
 fun getCopy(): MutableList<Card> {
     return ALPHA_SET.toMutableList()
+}
+
+fun getRandomCard(): Card {
+    return ALPHA_SET[ThreadLocalRandom.current().nextInt(ALPHA_SET.size)]
 }
