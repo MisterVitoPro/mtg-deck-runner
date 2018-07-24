@@ -1,9 +1,11 @@
+
 import constants.CardType
+import evolution.Genome
 import java.util.stream.Collectors
 
-class Game(library: Library) {
+class Game(genome: Genome) {
 
-    private val player: Player = Player("Player", library)
+    private val player: Player = Player("Player", genome.library)
     private val enemyPlayer: Player = Player("Enemy")
     var currentTurn: Int = 0
 
@@ -33,42 +35,42 @@ class Game(library: Library) {
         return currentTurn
     }
 
-    fun gameSetup() {
+    private fun gameSetup() {
         player.drawOpeningHand(7)
     }
 
-    fun untapStep() {
+    private fun untapStep() {
         player.library.cards.forEach { card -> card.isTapped = false }
     }
 
-    fun upkeepStep() {
+    private fun upkeepStep() {
 
     }
 
-    fun drawStep() {
+    private fun drawStep() {
         player.drawFromLibrary(1)
     }
 
-    fun mainPhase() {
+    private fun mainPhase() {
         player.playLand()
         player.tapLands()
         findPlay()
         player.manaPool = 0
     }
 
-    fun combatPhase() {
+    private fun combatPhase() {
         runDamage()
     }
 
-    fun mainPhasePostCombat() {
+    private fun mainPhasePostCombat() {
 
     }
 
-    fun endStep() {
+    private fun endStep() {
         player.battleField.removeAll { card -> card.type == CardType.INSTANT || card.type == CardType.SORCERY }
     }
 
-    fun findPlay() {
+    private fun findPlay() {
         val playableCards: List<Card> = player.hand.stream()
                 .filter { card -> card.type != CardType.LAND && card.cost <= player.manaPool }
                 .collect(Collectors.toList())
@@ -92,7 +94,7 @@ class Game(library: Library) {
         }
     }
 
-    fun runDamage() {
+    private fun runDamage() {
         var totalDamage = 0
         player.battleField
                 .filter { card -> card.type != CardType.LAND }
