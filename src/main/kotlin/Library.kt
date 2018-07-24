@@ -39,24 +39,28 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
         return cards.removeAt(0)
     }
 
-    fun printLibrary() {
-        val frequenciesByFirstChar = cards.groupingBy { it.name }.eachCount()
-        frequenciesByFirstChar.toSortedMap()
-                .forEach { t, u ->
-                    println("$t: $u")
-                }
-        print("\n")
-    }
-
     fun sortCards() {
         cards.sortBy { it.name }
     }
 
     fun shuffle() {
-        cards.shuffle()
+        Collections.shuffle(cards)
+    }
+
+    fun print(){
+        printCount(cards)
     }
 }
 
 fun getRandomCard(myList: MutableList<Card>): Card {
     return myList[ThreadLocalRandom.current().nextInt(myList.size)]
+}
+
+fun printCount(list: MutableList<Card>) {
+    val frequenciesByFirstChar = list.groupingBy { it.name }.eachCount()
+    frequenciesByFirstChar.toSortedMap()
+            .forEach { t, u ->
+                println("$t: $u")
+            }
+    print("\n")
 }
