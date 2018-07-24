@@ -3,6 +3,7 @@ package evolution
 import Card
 import Game
 import Library
+import constants.CardType
 import data.getRandomCard
 import java.util.concurrent.ThreadLocalRandom
 
@@ -75,6 +76,22 @@ class EvolutionManager(private val elitism: Boolean = true) {
         val splitPos = ThreadLocalRandom.current().nextInt(Math.min(genome1.library.cards.size, genome2.library.cards.size))
 
         return if (ThreadLocalRandom.current().nextDouble() <= swapChance) {
+            val temp: MutableList<Card> = ArrayList(genome1.library.cards.subList(0, splitPos))
+            val temp2: MutableList<Card> = ArrayList(genome2.library.cards.subList(splitPos, genome2.library.cards.size))
+
+            for(i in 0..temp2.size){
+                val counts: Map<String, Int> = temp.groupingBy { it.name }.eachCount()
+                if(counts[temp2[i].name]!! < 4){
+                    
+                }
+            }
+
+            val counts: Map<String, Int> = temp.filter { card -> card.type != CardType.LAND }
+                    .groupingBy { it.name }
+                    .eachCount()
+                    .filter { i -> i.value > 4 }
+                    .onEach { c -> c.value.minus(4) }
+
             val childGenome = Genome(Library(ArrayList(genome1.library.cards.subList(0, splitPos))))
             childGenome.library.cards.addAll(ArrayList(genome2.library.cards.subList(splitPos, genome2.library.cards.size)))
 //            if(childGenome.library.cards.filter { card -> card.type != CardType.LAND }.groupingBy { it.name }.eachCount().any { i -> i.value > 4 }){
