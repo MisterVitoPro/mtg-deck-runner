@@ -16,9 +16,9 @@ class EvolutionManager(private val elitism: Boolean = true, private val fittestP
     // Chance to mutate some of the cards
     private val mutationChance = 0.01
     // Number of times the deck will be ran
-    private val numOfRuns: Int = 500
+    private val numOfRuns: Int = 1000
     // Size of the population that will be evaluated
-    private val populationSize: Int = 50
+    private val populationSize: Int = 200
     // Of the scored population, top percentage we want to breed from
     private var population: MutableList<Genome> = mutableListOf()
     private var genList: MutableList<Genome> = mutableListOf()
@@ -112,10 +112,12 @@ class EvolutionManager(private val elitism: Boolean = true, private val fittestP
             }
 
             // From out filtered out list, create a 60 card deck
-            if(filteredGenome2.size <= 1) {
+            val num = if(filteredGenome2.size < 1) {
                 println("** ERROR ** Uh oh.. filtered too many")
-            }
-            val adjustedSplitPos = genome1.library.cards.size - filteredGenome2.size + 1
+                0
+            } else
+                1
+            val adjustedSplitPos = genome1.library.cards.size - filteredGenome2.size + num
             val reevaluatedSplitPos = if (adjustedSplitPos > splitPos) adjustedSplitPos else splitPos
             val childGenome = Genome(Library(ArrayList(genome1.library.cards.subList(0, reevaluatedSplitPos))))
             genome1.library.cards.reverse()

@@ -1,5 +1,5 @@
 import evolution.EvolutionManager
 
 fun main(args: Array<String>) {
-    EvolutionManager(true).run(200)
+    EvolutionManager(true, 0.5).run(2000)
 }
