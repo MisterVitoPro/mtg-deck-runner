@@ -60,7 +60,7 @@ fun printCount(list: MutableList<Card>) {
     val frequenciesByFirstChar = list.groupingBy { it.name }.eachCount()
     frequenciesByFirstChar.toSortedMap()
             .forEach { t, u ->
-                println("$t: $u")
+                println("$t (${list.find{ c -> c.name == t }!!.cost}): $u")
             }
     print("\n")
 }

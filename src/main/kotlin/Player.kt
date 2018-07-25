@@ -15,7 +15,7 @@ class Player(val name: String, val library: Library = Library()) {
     }
 
     fun drawOpeningHand(cardsToDraw: Int) {
-        if (cardsToDraw > 5 && !library.cards.subList(0, cardsToDraw).stream().allMatch { card -> card.type == CardType.LAND }) {
+        if (cardsToDraw > 3 && !library.cards.subList(0, cardsToDraw).stream().allMatch { card -> card.type == CardType.LAND }) {
             library.shuffle()
             drawOpeningHand(cardsToDraw - 1)
         } else {

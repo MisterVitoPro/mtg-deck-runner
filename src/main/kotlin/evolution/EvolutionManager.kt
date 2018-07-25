@@ -6,7 +6,10 @@ import Library
 import data.getRandomCard
 import java.util.concurrent.ThreadLocalRandom
 
-class EvolutionManager(private val elitism: Boolean = true) {
+/**
+ * Of the scored population, top percentage we want to breed from
+ */
+class EvolutionManager(private val elitism: Boolean = true, private val fittestPercentage: Double = 0.5) {
 
     // Chance for 2 genomes to swap halves
     private val swapChance = 0.5
@@ -17,8 +20,8 @@ class EvolutionManager(private val elitism: Boolean = true) {
     // Size of the population that will be evaluated
     private val populationSize: Int = 50
     // Of the scored population, top percentage we want to breed from
-    private val fittestPercentage: Double = 0.5
     private var population: MutableList<Genome> = mutableListOf()
+    private var genList: MutableList<Genome> = mutableListOf()
 
     init {
         while (population.size < populationSize) {
@@ -26,6 +29,7 @@ class EvolutionManager(private val elitism: Boolean = true) {
         }
         println("-- Initial Population Sample --")
         population[0].library.print()
+        genList.add(population[0])
     }
 
     /**
@@ -34,15 +38,19 @@ class EvolutionManager(private val elitism: Boolean = true) {
     fun run(numOfGenerations: Int) {
         for (g in 1..numOfGenerations) {
             evaluatePopulation()
-
-            println("\n**** [Generation #$g] ****")
-            println("** Best **")
-            println("Fitness: ${population[0].fitnessAverage}\n")
-            population[0].library.print()
-            println("** Worst **")
-            println("Fitness: ${population[population.size - 1].fitnessAverage}\n")
-            population[population.size - 1].library.print()
-
+            printResults(g)
+            if (g == numOfGenerations) {
+                genList.add(population[0])
+                println("\n**** [Results] ****")
+                println("Generations Ran: $numOfGenerations")
+                println("** Initial Library **")
+                println("Fitness: ${genList[0].fitnessAverage}\n")
+                genList[0].library.print()
+                println("** Best From Last Generation **")
+                println("Fitness: ${genList[genList.size - 1].fitnessAverage}\n")
+                genList[genList.size - 1].library.print()
+                break
+            }
             population = buildNextGeneration()
         }
     }
@@ -94,27 +102,30 @@ class EvolutionManager(private val elitism: Boolean = true) {
             val filteredGenome2: MutableList<Card> = ArrayList(genome2.library.cards)
             val genome1Copy: MutableList<Card> = ArrayList(genome1.library.cards)//.subList(0, splitPos))
             val genome2Copy: MutableList<Card> = ArrayList(genome2.library.cards)
-            for(i in 0 until genome2Copy.size){
+            for (i in 0 until genome2Copy.size) {
                 val c = genome2Copy[i]
                 genome1Copy.add(c)
                 val counts: Map<String, Int> = genome1Copy.groupingBy { it.name }.eachCount()
-                if(counts[c.name]!! > 4){
+                if (counts[c.name]!! > 4) {
                     filteredGenome2.remove(c)
                 }
             }
 
             // From out filtered out list, create a 60 card deck
+            if(filteredGenome2.size <= 1) {
+                println("** ERROR ** Uh oh.. filtered too many")
+            }
             val adjustedSplitPos = genome1.library.cards.size - filteredGenome2.size + 1
-            val reevaluatedSplitPos = if(adjustedSplitPos > splitPos) adjustedSplitPos else splitPos
+            val reevaluatedSplitPos = if (adjustedSplitPos > splitPos) adjustedSplitPos else splitPos
             val childGenome = Genome(Library(ArrayList(genome1.library.cards.subList(0, reevaluatedSplitPos))))
             genome1.library.cards.reverse()
             filteredGenome2.reverse()
             val genome1Iterator: MutableIterator<Card> = genome1.library.cards.iterator()
             val genome2Iterator: MutableIterator<Card> = filteredGenome2.iterator()
-            while(childGenome.library.cards.size < 60){
-                if(genome2Iterator.hasNext())
+            while (childGenome.library.cards.size < 60) {
+                if (genome2Iterator.hasNext())
                     childGenome.library.cards.add(genome2Iterator.next())
-                else if(genome1Iterator.hasNext()) // We are doing this as a percaution incase we are under 60
+                else if (genome1Iterator.hasNext()) // We are doing this as a percaution incase we are under 60
                     childGenome.library.cards.add(genome1Iterator.next())
             }
             return childGenome
@@ -140,6 +151,16 @@ class EvolutionManager(private val elitism: Boolean = true) {
         }
         return genome.copy()
     }
+
+    private fun printResults(gen: Int) {
+        println("\n**** [Generation #$gen] ****")
+        println("** Best **")
+        println("Fitness: ${population[0].fitnessAverage}\n")
+        population[0].library.print()
+        println("** Worst **")
+        println("Fitness: ${population[population.size - 1].fitnessAverage}\n")
+        population[population.size - 1].library.print()
+    }
 }
 
 /**
@@ -148,3 +169,4 @@ class EvolutionManager(private val elitism: Boolean = true) {
 fun <T> truncationSelection(scoredPopulation: Collection<T>, upperBound: Double): T {
     return scoredPopulation.elementAt((ThreadLocalRandom.current().nextDouble() * scoredPopulation.size.toDouble() * upperBound).toInt())
 }
+
