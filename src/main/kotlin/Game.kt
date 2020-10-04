@@ -7,15 +7,19 @@ class Game(genome: Genome) {
 
     private val player: Player = Player("Player", genome.library)
     private val enemyPlayer: Player = Player("Enemy")
-    var currentTurn: Int = 0
+    private var currentTurn: Int = 0
 
     fun run(): Int {
         gameSetup()
 
-        while (enemyPlayer.life > 0) {
-
+        do{
             currentTurn++
             //println("\nTurn #$currentTurn")
+
+            if (currentTurn >= 15) {
+                //println("\nDeck not good enough. Ending on turn $currentTurn")
+                return currentTurn
+            }
 
             untapStep()
             upkeepStep()
@@ -24,18 +28,14 @@ class Game(genome: Genome) {
             combatPhase()
             mainPhasePostCombat()
             endStep()
-
-            if (currentTurn >= 12) {
-                //println("\nDeck not good enough. Ending on turn $currentTurn")
-                return currentTurn
-            }
-        }
+        } while (enemyPlayer.life > 0)
 
         // println("\nDeck won on turn $currentTurn")
         return currentTurn
     }
 
     private fun gameSetup() {
+        player.library.shuffle()
         player.drawOpeningHand(7)
     }
 

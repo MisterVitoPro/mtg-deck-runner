@@ -8,6 +8,7 @@ class Player(val name: String, val library: Library = Library()) {
     var hand: MutableList<Card> = mutableListOf()
     private val graveyard: MutableList<Card> = mutableListOf()
     var battleField: MutableList<Card> = mutableListOf()
+    var muliganCount = 0
 
     init {
         //println("- $name Deck -")
@@ -18,6 +19,7 @@ class Player(val name: String, val library: Library = Library()) {
         if (cardsToDraw > 3 && !library.cards.subList(0, cardsToDraw).stream().allMatch { card -> card.type == CardType.LAND }) {
             library.shuffle()
             drawOpeningHand(cardsToDraw - 1)
+            muliganCount++
         } else {
             drawFromLibrary(cardsToDraw)
         }
