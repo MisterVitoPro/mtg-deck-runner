@@ -7,5 +7,6 @@ fun main(args: Array<String>) {
             false,
             0.5,
             0.02,
-            ::truncationSelection).run(50)
+            true,
+            ::truncationSelection).run(20)
 }

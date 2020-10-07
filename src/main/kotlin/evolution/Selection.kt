@@ -24,10 +24,10 @@ fun <T> truncationSelection(scoredPopulation: Collection<T>): T {
  * Selects an individual with a probability proportional to it's score. Also known as roulette wheel selection.
  */
 fun fitnessProportionateSelection(scoredPopulation:  Collection<Genome>): Genome {
-    var value = scoredPopulation.sumByDouble { it.fitnessAverage } * random()
+    var value = scoredPopulation.sumBy { it.fitness } * random()
 
     for (genome in scoredPopulation) {
-        value -= genome.fitnessAverage
+        value -= genome.fitness
         if (value <= 0) return genome
     }
 
