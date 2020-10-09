@@ -1,23 +1,43 @@
+import com.sun.xml.internal.fastinfoset.util.StringArray
 import evolution.Genome
 import java.io.File
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
 /**
- * @return Returns inputstream from Forge match as List<String>
+ * @return Returns InputStream from Forge match as List<String>
  */
-fun executeForgeMatch(genomes: List<Genome>, numOfGamesInMatch: Int): List<String>{
-    val pb = ProcessBuilder("java", "-Xmx8096m", "-jar", "forge-gui-desktop-1.6.36-jar-with-dependencies.jar", "sim", "-d", "${genomes[0].name}.dck", "${genomes[1].name}.dck", "-m", "$numOfGamesInMatch", "-q")
-            .directory(File("F:\\MTG_Forge\\1.6.36"))
+fun executeForgeMatch(deckName1: String, deckName2: String, numOfGamesInMatch: Int, quiet: Boolean = true): List<String>{
+    // Create Arg array
+    val args = mutableListOf<String>()
+    args.add("java")
+    args.add("-Xmx8096m")
+    args.add("-jar")
+    args.add("forge-gui-desktop-1.6.37-SNAPSHOT-jar-with-dependencies.jar")
+    args.add("sim")
+    args.add("-d")
+    args.add("$deckName1.dck")
+    args.add("$deckName2.dck")
+    args.add("-m")
+    args.add("$numOfGamesInMatch")
+    if(quiet) args.add("-q")
+
+    // Execute Simulation
+    val pb = ProcessBuilder(args).directory(File(configs.forgeDir))
     val p = pb.start()
     p.waitFor(60, TimeUnit.SECONDS)
+
+    // Take InputStream, put into file then return as string
     val inStream: InputStream = p.inputStream
     createLogFolder()
-    val f = File("./logs/${genomes[0].name}-${genomes[1].name}.log")
+    val f = File("./logs/${deckName1}-${deckName2}.log")
     f.copyInputStreamToFile(inStream)
     return f.readLines()
 }
 
+/**
+ * Create 'logs' directory in root
+ */
 fun createLogFolder(){
     val f = File("./logs")
     if(!f.exists()){
@@ -52,6 +72,7 @@ fun forgeOutput(list: MutableList<Card>, name: String){
                 sb.append("$n $name\n")
             }
 
-    val file = File("C:\\Users\\Glasshouse\\AppData\\Roaming\\Forge\\decks\\constructed\\$name.dck")
+    // TODO Create a default location
+    val file = File("${configs.deckOutputFilePath}\\$name.dck")
     file.writeText(sb.toString())
 }

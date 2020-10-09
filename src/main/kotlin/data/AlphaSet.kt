@@ -50,7 +50,6 @@ val ALPHA_SET: List<Card> = arrayListOf(
         Card("Uthden Troll", CardType.CREATURE, Color.RED, 3, 2, 2),
         Card("Wall of Fire", CardType.CREATURE, Color.RED, 3, 0, 5),
         Card("Wall of Stone", CardType.CREATURE, Color.RED, 3, 0, 8),
-        Card("Wheel of Fortune", CardType.SORCERY, Color.RED, 3),
         Card("Badlands", CardType.NON_BASIC_LAND, Color.LAND),
         Card("Mountain", CardType.LAND, Color.LAND)
 )

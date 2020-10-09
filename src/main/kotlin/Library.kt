@@ -3,7 +3,6 @@ import data.getCopy
 import data.getRandomLand
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
-import kotlin.streams.toList
 
 class Library(var cards: MutableList<Card> = mutableListOf()) {
 
@@ -84,11 +83,11 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
     }
 
     fun lands(): List<Card> {
-        return cards.stream().filter { card -> card.type == CardType.LAND }.toList()
+        return cards.filter { card -> card.type == CardType.LAND }
     }
 
     fun nonLands(): List<Card> {
-        return cards.stream().filter { card -> card.type != CardType.LAND }.toList()
+        return cards.filter { card -> card.type != CardType.LAND }
     }
 }
 

@@ -1,12 +1,18 @@
 
+import com.charleskorn.kaml.Yaml
 import evolution.EvolutionManager
 import evolution.truncationSelection
 
-fun main(args: Array<String>) {
+private val configYaml = object {}.javaClass.getResource("config.yaml").readText()
+val configs: EvolutionSettings = Yaml.default.decodeFromString(EvolutionSettings.serializer(), configYaml)
+
+fun main() {
+
     EvolutionManager(
-            false,
-            0.5,
+            configs.elitism,
+            configs.swapChance,
             0.02,
             true,
-            ::truncationSelection).run(20)
+            configs.populationSize,
+            ::truncationSelection).run(configs.generations)
 }
