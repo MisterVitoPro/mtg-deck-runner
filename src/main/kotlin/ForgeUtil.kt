@@ -13,7 +13,7 @@ fun executeForgeMatch(deckName1: String, deckName2: String, numOfGamesInMatch: I
     args.add("java")
     args.add("-Xmx8096m")
     args.add("-jar")
-    args.add("forge-gui-desktop-1.6.37-SNAPSHOT-jar-with-dependencies.jar")
+    args.add(configs.forgeJar)
     args.add("sim")
     args.add("-d")
     args.add("$deckName1.dck")

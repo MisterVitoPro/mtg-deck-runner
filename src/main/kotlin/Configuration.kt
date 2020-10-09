@@ -14,5 +14,6 @@ data class EvolutionSettings(
     val swapChance: Double,
     val newChild: Boolean,
     val deckOutputFilePath: String,
-    val forgeDir: String
+    val forgeDir: String,
+    val forgeJar: String
 )
