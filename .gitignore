@@ -6,5 +6,5 @@ build/
 *.iml
 *.dck
 out
-logs/
+*.log
 *.yaml

@@ -6,5 +6,5 @@ enum class Color {
     BLACK,
     RED,
     GREEN,
-    LAND
+    COLORLESS
 }

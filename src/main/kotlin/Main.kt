@@ -7,7 +7,6 @@ private val configYaml = object {}.javaClass.getResource("config.yaml").readText
 val configs: EvolutionSettings = Yaml.default.decodeFromString(EvolutionSettings.serializer(), configYaml)
 
 fun main() {
-
     EvolutionManager(
             configs.elitism,
             configs.swapChance,

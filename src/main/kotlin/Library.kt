@@ -1,6 +1,7 @@
 import constants.CardType
 import data.getCopy
 import data.getRandomLand
+import java.lang.StringBuilder
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 
@@ -11,7 +12,7 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
             val myList: MutableList<Card> = getCopy()
             val cardCount = HashMap<String, Int>()
             // Random select starting land count
-            val range = 0..ThreadLocalRandom.current().nextInt(16, 25)
+            val range = 0..ThreadLocalRandom.current().nextInt(20, 26)
             for (i in range) {
                 cards.add(getRandomLand())
             }
@@ -32,7 +33,6 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
                     }
                 }
             }
-
             shuffle()
         }
     }
@@ -40,7 +40,7 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
     /**
      * @return If there are 4 or less cards in the deck
      */
-    fun checkIfCardCountLegality(cardName: String): Boolean {
+    private fun checkIfCardCountLegality(cardName: String): Boolean {
         return checkIfCardCountLegality(cards, cardName)
     }
 
@@ -63,10 +63,6 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
         return cards.removeAt(0)
     }
 
-    fun sortCards() {
-        cards.sortBy { it.name }
-    }
-
     fun shuffle() {
         cards.shuffle()
     }
@@ -76,10 +72,20 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
     }
 
     fun getPrintableLibrary(): String {
-        val frequenciesByFirstChar = cards.groupingBy { it.name }.eachCount()
-        return frequenciesByFirstChar.toSortedMap()
-                .map { (t, u) -> "${cards.find{ c -> c.name == t }!!.printShort()}: $u" }
-                .joinToString(separator = "") {"$it\n"}
+        val cardNonLandCounts = this.nonLands().groupingBy { it.name }.eachCount()
+        val cardLandCounts = this.lands().groupingBy { it.name }.eachCount()
+
+        fun sortedCountsPrettyPrint(cardCounts: Map<String, Int>): String {
+            return cardCounts.toSortedMap()
+                    .map { (t, u) -> "${cards.find{ c -> c.name == t }!!.printShort()}: $u" }
+                    .joinToString(separator = "") {"$it\n"}
+        }
+
+        return StringBuilder()
+                .appendLine("----- Creatures / Spells -----")
+                .append(sortedCountsPrettyPrint(cardNonLandCounts))
+                .appendLine("----- Lands -----")
+                .append(sortedCountsPrettyPrint(cardLandCounts)).toString()
     }
 
     fun lands(): List<Card> {
@@ -93,13 +99,5 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
 
 fun getRandomCard(myList: MutableList<Card>): Card {
     return myList[ThreadLocalRandom.current().nextInt(myList.size)]
-}
-
-fun csvOut(list: MutableList<Card>){
-    val frequenciesByFirstChar = list.groupingBy { it.name }.eachCount()
-    frequenciesByFirstChar.toSortedMap()
-            .forEach { (t, u) ->
-                println("$t,${list.find{ c -> c.name == t }!!.cost},$u")
-            }
 }
 

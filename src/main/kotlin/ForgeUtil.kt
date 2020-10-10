@@ -1,8 +1,11 @@
 import com.sun.xml.internal.fastinfoset.util.StringArray
 import evolution.Genome
+import mu.KotlinLogging
 import java.io.File
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * @return Returns InputStream from Forge match as List<String>
@@ -11,7 +14,7 @@ fun executeForgeMatch(deckName1: String, deckName2: String, numOfGamesInMatch: I
     // Create Arg array
     val args = mutableListOf<String>()
     args.add("java")
-    args.add("-Xmx8096m")
+    args.add("-Xmx4096m")
     args.add("-jar")
     args.add(configs.forgeJar)
     args.add("sim")
@@ -23,6 +26,7 @@ fun executeForgeMatch(deckName1: String, deckName2: String, numOfGamesInMatch: I
     if(quiet) args.add("-q")
 
     // Execute Simulation
+    logger.info { "Executing Forge using: ${args.joinToString(" ") { it }} " }
     val pb = ProcessBuilder(args).directory(File(configs.forgeDir))
     val p = pb.start()
     p.waitFor(60, TimeUnit.SECONDS)
@@ -33,6 +37,10 @@ fun executeForgeMatch(deckName1: String, deckName2: String, numOfGamesInMatch: I
     val f = File("./logs/${deckName1}-${deckName2}.log")
     f.copyInputStreamToFile(inStream)
     return f.readLines()
+}
+
+suspend fun onMatchRun(deckName1: String, deckName2: String, numOfGamesInMatch: Int, quiet: Boolean = true): List<String> {
+    return executeForgeMatch(deckName1, deckName2, numOfGamesInMatch, quiet)
 }
 
 /**

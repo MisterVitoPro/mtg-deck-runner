@@ -1,20 +1,20 @@
 package evolution
 
 import Card
-import EvolutionSettings
 import Library
 import constants.CardType
 import data.getRandomCard
 import executeForgeMatch
 import forgeOutput
 import getLastMatchWinInt
-import java.io.File
-import java.util.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import java.util.concurrent.ThreadLocalRandom
-import kotlin.NoSuchElementException
-import kotlin.collections.ArrayList
 import kotlin.math.min
 
+private val logger = KotlinLogging.logger {}
 
 /**
  * swapChance       = Chance for 2 genomes to swap halves
@@ -39,8 +39,8 @@ class EvolutionManager(private val elitism: Boolean = true,
         while (population.size < populationSize) {
             population.add(Genome())
         }
-        println("-- Built Initial Population  --")
-        population[0].library.print()
+        logger.info{  "--- Built Initial $populationSize Population  ---" }
+        logger.info{ "Cards in Library:\n" + population[0].library.getPrintableLibrary() }
         genList.add(population[0])
     }
 
@@ -50,7 +50,7 @@ class EvolutionManager(private val elitism: Boolean = true,
     fun run(numOfGenerations: Int) {
         for (g in 1..numOfGenerations) {
             //evaluatePopulation(g)
-            evaluatePopulationSingleDeck(g)
+            evaluatePopulationSingleDeck(g, "Alpha_Mono_Red")
             printGenerationResults(g)
             genList.add(population[0])
             if (g < numOfGenerations)
@@ -66,27 +66,35 @@ class EvolutionManager(private val elitism: Boolean = true,
         printGenomeInfo(genList[0])
         println("** Best From Last Generation **")
         printGenomeInfo(genList[genList.size - 1])
-        File("$numOfGenerations-${Date().time}")
+        logger.info { "List of all Best in Generations"}
+        logger.info { genList.map { it.toString() }.joinToString("") { it } }
     }
 
     /**
      * For every genome, run a game and produce a fitness
      */
-    private fun evaluatePopulationSingleDeck(gen: Int) {
-        population.forEachIndexed { index, genome ->
-            genome.name = "${gen}_${index}_${genome.color}"
-            forgeOutput(genome)
+    private fun evaluatePopulationSingleDeck(gen: Int, deckBaseLine: String) {
+        // Chunking the population so we can run forge in a coroutine
+        val chunkedPopulation = population.chunked(8)
+        chunkedPopulation.forEachIndexed { i, chunkedGenome ->
+            runBlocking {
+                chunkedGenome.forEachIndexed { index, genome ->
+                    launch(Dispatchers.Default) {
+                        genome.name = "${gen}_${(i*4) + index}_${genome.color}"
+                        forgeOutput(genome)
+                        val matchLogs = executeForgeMatch(genome.name, deckBaseLine, numOfGamesInMatch)
 
-            val matchLogs = executeForgeMatch(genome.name, "Alpha_Mono_Red", numOfGamesInMatch)
-
-            for (n in matchLogs.indices.reversed()) {
-                if (matchLogs[n].contains("Match")) {
-                    val genomeFit = getLastMatchWinInt(matchLogs[n], genome.name)
-                    val baseFit = getLastMatchWinInt(matchLogs[n], "Alpha_Mono_Red")
-                    val matchWin = if (genomeFit > baseFit) 1 else 0
-                    genome.fitness = fitnessCalc(genomeFit, baseFit, matchWin)
-                    genome.print()
-                    break
+                        for (n in matchLogs.indices.reversed()) {
+                            if (matchLogs[n].contains("Match")) {
+                                val genomeFit = getLastMatchWinInt(matchLogs[n], genome.name)
+                                val baseFit = getLastMatchWinInt(matchLogs[n], "Alpha_Mono_Red")
+                                val matchWin = if (genomeFit > baseFit) 1 else 0
+                                genome.fitness = fitnessCalc(genomeFit, baseFit, matchWin)
+                                genome.print()
+                                break
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -171,8 +179,8 @@ class EvolutionManager(private val elitism: Boolean = true,
      * Breed children of passed in Genomes
      */
     private fun breed(genome1: Genome, genome2: Genome): Genome {
-        genome1.library.sortCards()
-        genome2.library.sortCards()
+        genome1.library.shuffle()
+        genome2.library.shuffle()
 
         // Check if we should actually create children, or just send in a copy
         return if (ThreadLocalRandom.current().nextDouble() <= swapChance) {
@@ -239,8 +247,8 @@ class EvolutionManager(private val elitism: Boolean = true,
                             .groupingBy { it.name }
                             .eachCount()
                             .any { c -> c.value > 4 }) {
-                System.err.println("** ERROR ** Greater than 4 Count")
-                System.err.println(childGenome.library.getPrintableLibrary())
+                logger.error("** ERROR ** Greater than 4 Count")
+                logger.error(childGenome.library.getPrintableLibrary())
             }
 
             return childGenome
@@ -260,7 +268,7 @@ class EvolutionManager(private val elitism: Boolean = true,
                 val changeCard: Card = getRandomCard()
                 val counts: Map<String, Int> = genome.library.cards.filter { c -> c.type != CardType.LAND }.groupingBy { it.name }.eachCount()
                 if (counts.containsKey(changeCard.name)
-                        && counts[changeCard.name] ?: error("Unable to find card") < 4
+                        && counts[changeCard.name] ?: error("Unable to find card in counts for mutation") < 4
                         && genome.library.cards[i].name != changeCard.name)
                     genome.library.cards[i] = changeCard
             }
@@ -269,16 +277,17 @@ class EvolutionManager(private val elitism: Boolean = true,
     }
 
     private fun printGenomeInfo(genome: Genome) {
-        println("Name: ${genome.name}")
-        println("Fitness: ${genome.fitness}")
-        println("Deck Size: ${genome.library.cards.size}\n")
+        println(genome.toString())
         genome.library.print()
     }
 
     private fun printGenerationResults(gen: Int, printWorst: Boolean = false) {
-        println("\n**** [Generation #$gen] ****")
-        println("** Best **")
-        printGenomeInfo(population[0])
+        val sb = StringBuilder()
+        sb.appendLine("\n-----[Generation #$gen]-----")
+        sb.appendLine("**** Best Decks ****")
+        sb.append(population[0].toString())
+        sb.append(population[1].toString())
+        println(sb)
         if (printWorst) {
             println("** Worst **")
             printGenomeInfo(population[population.size - 1])

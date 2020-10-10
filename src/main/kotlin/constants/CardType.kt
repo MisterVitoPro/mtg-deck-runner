@@ -5,7 +5,12 @@ enum class CardType {
     SORCERY,
     INSTANT,
     LAND,
-    NON_BASIC_LAND,
     ENCHANTMENT,
     ARTIFACT
+}
+
+enum class CardSubType {
+    BASIC,
+    NONE,
+    NON_BASIC
 }
