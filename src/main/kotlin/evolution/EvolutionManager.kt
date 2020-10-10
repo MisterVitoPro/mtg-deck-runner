@@ -7,14 +7,14 @@ import Library
 import constants.CardType
 import constants.LIMITED_EDITION_ALPHA
 import io.magicthegathering.kotlinsdk.model.card.MtgCard
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import utils.CardFetcherUtils.filterCardsByColor
 import utils.CardUtil.getRandomCard
 import utils.masterCardCatalog
+import java.util.concurrent.Executors
 import java.util.concurrent.ThreadLocalRandom
+import java.util.concurrent.TimeUnit
 import kotlin.math.min
 
 private val logger = KotlinLogging.logger {}
@@ -77,30 +77,33 @@ class EvolutionManager(private val elitism: Boolean = true,
      * For every genome, run a game and produce a fitness
      */
     private fun evaluatePopulationSingleDeck(gen: Int, deckBaseLine: String) {
-        // Chunking the population so we can run forge in a coroutine
-        val chunkedPopulation = population.chunked(8)
-        chunkedPopulation.forEachIndexed { i, chunkedGenome ->
-            runBlocking {
-                chunkedGenome.forEachIndexed { index, genome ->
-                    launch(Dispatchers.Default) {
-                        genome.name = "${gen}_${(i * 4) + index}_${genome.color}"
-                        forgeOutput(genome)
-                        val matchLogs = executeForgeMatch(genome.name, deckBaseLine, numOfGamesInMatch)
+        // Use ThreadPool to run multiple Forge AI Matches
+        val nthreads = 8
+        val threadPool = Executors.newFixedThreadPool(nthreads)
+        population.forEachIndexed { i, genome ->
+            threadPool.execute {
+                // genome.name = "${gen}_${(i * nthreads) + index}_${genome.color}"
+                genome.name = "${gen}_${i}_${genome.color}"
+                forgeOutput(genome)
+                val matchLogs = executeForgeMatch(genome.name, deckBaseLine, numOfGamesInMatch)
 
-                        for (n in matchLogs.indices.reversed()) {
-                            if (matchLogs[n].contains("Match")) {
-                                val genomeFit = getLastMatchWinInt(matchLogs[n], genome.name)
-                                val baseFit = getLastMatchWinInt(matchLogs[n], deckBaseLine)
-                                val matchWin = if (genomeFit > baseFit) 1 else 0
-                                genome.fitness = fitnessCalc(genomeFit, baseFit, matchWin)
-                                genome.print()
-                                break
-                            }
-                        }
+                for (n in matchLogs.indices.reversed()) {
+                    if (matchLogs[n].contains("Match")) {
+                        val genomeFit = getLastMatchWinInt(matchLogs[n], genome.name)
+                        val baseFit = getLastMatchWinInt(matchLogs[n], deckBaseLine)
+                        val matchWin = if (genomeFit > baseFit) 1 else 0
+                        genome.fitness = fitnessCalc(genomeFit, baseFit, matchWin)
+                        genome.print()
+                        break
                     }
                 }
             }
         }
+        runBlocking {
+            threadPool.shutdown()
+            threadPool.awaitTermination(10, TimeUnit.MINUTES)
+        }
+//        }
         population.sortByDescending { genome -> genome.fitness }
     }
 

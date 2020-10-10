@@ -11,7 +11,7 @@ object ForgeUtil {
     /**
      * @return Returns InputStream from Forge match as List<String>
      */
-    fun executeForgeMatch(deckName1: String, deckName2: String, numOfGamesInMatch: Int, quiet: Boolean = true): List<String> {
+    fun executeForgeMatch(deckName1: String, deckName2: String, numOfGamesInMatch: Int, quiet: Boolean = true, logOutput: Boolean = false): List<String> {
         // Create Arg array to call for ProcessBuilder
         val args = mutableListOf<String>()
         args.add("java")
@@ -33,11 +33,16 @@ object ForgeUtil {
         p.waitFor(60, TimeUnit.SECONDS)
 
         // Take InputStream, put into file then return as string
+        // OR just return lines from stream
         val inStream: InputStream = p.inputStream
-        createLogFolder()
-        val f = File("./logs/${deckName1}-${deckName2}.log")
-        f.copyInputStreamToFile(inStream)
-        return f.readLines()
+        return if (logOutput) {
+            createLogFolder()
+            val f = File("./logs/${deckName1}-${deckName2}.log")
+            f.copyInputStreamToFile(inStream)
+            f.readLines()
+        } else {
+            inStream.bufferedReader().readLines()
+        }
     }
 
     /**
