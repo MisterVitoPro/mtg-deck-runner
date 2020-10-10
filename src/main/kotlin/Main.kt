@@ -1,12 +1,12 @@
-
-import com.charleskorn.kaml.Yaml
+import constants.LIMITED_EDITION_ALPHA
 import evolution.EvolutionManager
 import evolution.truncationSelection
-
-private val configYaml = object {}.javaClass.getResource("config.yaml").readText()
-val configs: EvolutionSettings = Yaml.default.decodeFromString(EvolutionSettings.serializer(), configYaml)
+import utils.callGetCardsBySet
 
 fun main() {
+
+    callGetCardsBySet(LIMITED_EDITION_ALPHA)
+
     EvolutionManager(
             configs.elitism,
             configs.swapChance,

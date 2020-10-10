@@ -1,38 +1,35 @@
 import constants.CardType
-import data.getCopy
-import data.getRandomLand
-import java.lang.StringBuilder
-import java.util.*
+import constants.Color
+import constants.LIMITED_EDITION_ALPHA
+import io.magicthegathering.kotlinsdk.model.card.MtgCard
+import utils.CardFetcherUtils.filterCardsByColor
+import utils.CardFetcherUtils.getCardByName
+import utils.CardUtil.getRandomCard
+import utils.CardUtil.printableDataShort
+import utils.callGetCardsBySet
 import java.util.concurrent.ThreadLocalRandom
 
-class Library(var cards: MutableList<Card> = mutableListOf()) {
+class Library(var cards: MutableList<MtgCard> = mutableListOf()) {
 
     init {
         if (cards.isEmpty()) {
-            val myList: MutableList<Card> = getCopy()
-            val cardCount = HashMap<String, Int>()
+            val myCardList: MutableList<MtgCard> = filterCardsByColor(Color.RED, callGetCardsBySet(LIMITED_EDITION_ALPHA)).toMutableList()
             // Random select starting land count
             val range = 0..ThreadLocalRandom.current().nextInt(20, 26)
             for (i in range) {
-                cards.add(getRandomLand())
+                cards.add(getCardByName("Mountain"))
             }
 
+            var count = 0
+            val maxTries = 100
             while (cards.size < 60) {
-                val card = getRandomCard(myList)
-                cardCount[card.name] = if (!cardCount.containsKey(card.name)) {
-                    cards.add(card)
-                    1
-                } else {
-                    val count = cardCount[card.name]
-                    if (count?.compareTo(4)!! < 0) {
-                        cards.add(card)
-                        count.plus(1)
-                    } else {
-                        myList.remove(card)
-                        count
-                    }
+                val card = getRandomCard(myCardList)
+                if (!addCardLegally(card)) {
+                    count += 1
+                    myCardList.remove(card)
                 }
             }
+            if (count >= maxTries) throw Exception("Too many tries to add cards. Rethink this shit!")
             shuffle()
         }
     }
@@ -44,30 +41,25 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
         return checkIfCardCountLegality(cards, cardName)
     }
 
-    fun addCardLegally(card: Card): Boolean {
-        return if(checkIfCardCountLegality(card.name)) cards.add(card) else false
+    fun addCardLegally(card: MtgCard): Boolean {
+        return if (checkIfCardCountLegality(card.name)) cards.add(card) else false
     }
 
-    companion object{
+    companion object {
         /**
          * @return If there are 4 or less cards in the deck
          */
-        fun checkIfCardCountLegality(cardList: MutableList<Card>, cardName: String): Boolean {
+        fun checkIfCardCountLegality(cardList: MutableList<MtgCard>, cardName: String): Boolean {
             val cardCount: Int? = cardList.groupingBy { it.name }.eachCount()[cardName]
             return cardCount == null || cardCount < 4
         }
-    }
-
-
-    fun draw(): Card {
-        return cards.removeAt(0)
     }
 
     fun shuffle() {
         cards.shuffle()
     }
 
-    fun print(){
+    fun print() {
         println(getPrintableLibrary())
     }
 
@@ -77,8 +69,8 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
 
         fun sortedCountsPrettyPrint(cardCounts: Map<String, Int>): String {
             return cardCounts.toSortedMap()
-                    .map { (t, u) -> "${cards.find{ c -> c.name == t }!!.printShort()}: $u" }
-                    .joinToString(separator = "") {"$it\n"}
+                    .map { (t, u) -> "${u}x ${cards.find { c -> c.name == t }!!.printableDataShort()}" }
+                    .joinToString(separator = "") { "$it\n" }
         }
 
         return StringBuilder()
@@ -88,16 +80,11 @@ class Library(var cards: MutableList<Card> = mutableListOf()) {
                 .append(sortedCountsPrettyPrint(cardLandCounts)).toString()
     }
 
-    fun lands(): List<Card> {
-        return cards.filter { card -> card.type == CardType.LAND }
+    fun lands(): List<MtgCard> {
+        return cards.filter { card -> card.types.map { it.toLowerCase() }.contains(CardType.LAND.name.toLowerCase()) }
     }
 
-    fun nonLands(): List<Card> {
-        return cards.filter { card -> card.type != CardType.LAND }
+    fun nonLands(): List<MtgCard> {
+        return cards.filter { card -> !card.types.map { it.toLowerCase() }.contains(CardType.LAND.name.toLowerCase()) }
     }
 }
-
-fun getRandomCard(myList: MutableList<Card>): Card {
-    return myList[ThreadLocalRandom.current().nextInt(myList.size)]
-}
-

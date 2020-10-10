@@ -1,16 +1,19 @@
 package evolution
 
-import Card
+import ForgeUtil.executeForgeMatch
+import ForgeUtil.forgeOutput
+import ForgeUtil.getLastMatchWinInt
 import Library
 import constants.CardType
-import data.getRandomCard
-import executeForgeMatch
-import forgeOutput
-import getLastMatchWinInt
+import constants.LIMITED_EDITION_ALPHA
+import io.magicthegathering.kotlinsdk.model.card.MtgCard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import utils.CardFetcherUtils.filterCardsByColor
+import utils.CardUtil.getRandomCard
+import utils.masterCardCatalog
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.min
 
@@ -39,8 +42,8 @@ class EvolutionManager(private val elitism: Boolean = true,
         while (population.size < populationSize) {
             population.add(Genome())
         }
-        logger.info{  "--- Built Initial $populationSize Population  ---" }
-        logger.info{ "Cards in Library:\n" + population[0].library.getPrintableLibrary() }
+        logger.info { "--- Built Initial $populationSize Population  ---" }
+        logger.info { "Cards in Library:\n" + population[0].library.getPrintableLibrary() }
         genList.add(population[0])
     }
 
@@ -66,7 +69,7 @@ class EvolutionManager(private val elitism: Boolean = true,
         printGenomeInfo(genList[0])
         println("** Best From Last Generation **")
         printGenomeInfo(genList[genList.size - 1])
-        logger.info { "List of all Best in Generations"}
+        logger.info { "List of all Best in Generations" }
         logger.info { genList.map { it.toString() }.joinToString("") { it } }
     }
 
@@ -80,14 +83,14 @@ class EvolutionManager(private val elitism: Boolean = true,
             runBlocking {
                 chunkedGenome.forEachIndexed { index, genome ->
                     launch(Dispatchers.Default) {
-                        genome.name = "${gen}_${(i*4) + index}_${genome.color}"
+                        genome.name = "${gen}_${(i * 4) + index}_${genome.color}"
                         forgeOutput(genome)
                         val matchLogs = executeForgeMatch(genome.name, deckBaseLine, numOfGamesInMatch)
 
                         for (n in matchLogs.indices.reversed()) {
                             if (matchLogs[n].contains("Match")) {
                                 val genomeFit = getLastMatchWinInt(matchLogs[n], genome.name)
-                                val baseFit = getLastMatchWinInt(matchLogs[n], "Alpha_Mono_Red")
+                                val baseFit = getLastMatchWinInt(matchLogs[n], deckBaseLine)
                                 val matchWin = if (genomeFit > baseFit) 1 else 0
                                 genome.fitness = fitnessCalc(genomeFit, baseFit, matchWin)
                                 genome.print()
@@ -186,9 +189,9 @@ class EvolutionManager(private val elitism: Boolean = true,
         return if (ThreadLocalRandom.current().nextDouble() <= swapChance) {
             // We need to filter out any cards that would bring a card count > 4 (MTG rules for decks)
             // Take Genome 2 and remove and cards that would bring the card count > 4 when Genome 1 cards are added
-            val filteredGenome2NonLands: MutableList<Card> = ArrayList(genome2.library.nonLands())
-            val genome1CopyNoneLands: MutableList<Card> = ArrayList(genome1.library.nonLands())
-            val genome2CopyNonLands: MutableList<Card> = ArrayList(genome2.library.nonLands())
+            val filteredGenome2NonLands: MutableList<MtgCard> = ArrayList(genome2.library.nonLands())
+            val genome1CopyNoneLands: MutableList<MtgCard> = ArrayList(genome1.library.nonLands())
+            val genome2CopyNonLands: MutableList<MtgCard> = ArrayList(genome2.library.nonLands())
             for (i in 0 until genome2CopyNonLands.size) {
                 val card = genome2CopyNonLands[i]
                 genome1CopyNoneLands.add(card)
@@ -215,17 +218,17 @@ class EvolutionManager(private val elitism: Boolean = true,
             val reevaluatedSplitPos = if (adjustedSplitPos > splitPos) adjustedSplitPos else splitPos
 
             // Randomly select lands from either genome parent
-            val landsForChildGenome: MutableList<Card> = if (ThreadLocalRandom.current().nextDouble() < 0.5)
-                genome1.library.lands() as MutableList<Card>
+            val landsForChildGenome: MutableList<MtgCard> = if (ThreadLocalRandom.current().nextDouble() < 0.5)
+                genome1.library.lands() as MutableList<MtgCard>
             else
-                genome2.library.lands() as MutableList<Card>
+                genome2.library.lands() as MutableList<MtgCard>
 
             val childGenome = Genome(Library(landsForChildGenome))
             childGenome.library.cards.addAll(genome1.library.nonLands().subList(0, reevaluatedSplitPos))
 
             // Need to start from the bottom to avoid duplicates
-            val genome1Iterator: Iterator<Card> = genome1.library.nonLands().shuffled().iterator()
-            val genome2Iterator: Iterator<Card> = filteredGenome2NonLands.reversed().iterator()
+            val genome1Iterator: Iterator<MtgCard> = genome1.library.nonLands().shuffled().iterator()
+            val genome2Iterator: Iterator<MtgCard> = filteredGenome2NonLands.reversed().iterator()
 
             // Populate Child genome library with more cards if child genome library is less than 60
             while (childGenome.library.cards.size < 60) {
@@ -255,7 +258,7 @@ class EvolutionManager(private val elitism: Boolean = true,
         } else {
             // Randomly select genome 1 or 2
             if (ThreadLocalRandom.current().nextDouble() < 0.5
-                    && genome1.library.cards.any { c -> c.type == CardType.LAND })
+                    && genome1.library.cards.any { c -> c.type.equals(CardType.LAND.name, true) })
                 genome1.copy()
             else
                 genome2.copy()
@@ -263,10 +266,11 @@ class EvolutionManager(private val elitism: Boolean = true,
     }
 
     private fun mutate(genome: Genome): Genome {
+        val myCardList = filterCardsByColor(genome.color, masterCardCatalog[LIMITED_EDITION_ALPHA]!!)
         for (i in 0 until genome.library.cards.size) {
             if (ThreadLocalRandom.current().nextDouble() <= mutationChance) {
-                val changeCard: Card = getRandomCard()
-                val counts: Map<String, Int> = genome.library.cards.filter { c -> c.type != CardType.LAND }.groupingBy { it.name }.eachCount()
+                val changeCard: MtgCard = getRandomCard(myCardList)
+                val counts: Map<String, Int> = genome.library.cards.filter { c -> c.type.toLowerCase() != CardType.LAND.name.toLowerCase() }.groupingBy { it.name }.eachCount()
                 if (counts.containsKey(changeCard.name)
                         && counts[changeCard.name] ?: error("Unable to find card in counts for mutation") < 4
                         && genome.library.cards[i].name != changeCard.name)

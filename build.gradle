@@ -18,4 +18,5 @@ dependencies {
     compile 'io.github.microutils:kotlin-logging:1.7.8'
     compile 'org.slf4j:slf4j-api:1.7.30'
     compile 'org.apache.logging.log4j:log4j-slf4j-impl:2.13.3'
+    compile 'io.magicthegathering:kotlinsdk:1.0.4'
 }

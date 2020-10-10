@@ -1,5 +1,9 @@
+import com.charleskorn.kaml.Yaml
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+
+private val configYaml = object {}.javaClass.getResource("config.yaml").readText()
+val configs: EvolutionSettings = Yaml.default.decodeFromString(EvolutionSettings.serializer(), configYaml)
 
 /**
  * swapChance       = Chance for 2 genomes to swap halves
