@@ -12,6 +12,7 @@ import mu.KotlinLogging
 import utils.CardFetcherUtils.filterCardsByColor
 import utils.CardUtil.getRandomCard
 import utils.masterCardCatalog
+import java.io.File
 import java.lang.Math.random
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -43,7 +44,7 @@ class EvolutionManager(private val populationSize: Int = 10,
         while (population.size < populationSize) {
             population.add(Genome(generation = currentGeneration))
         }
-        logger.info { "--- Built Initial $populationSize Population  ---" }
+        logger.info { "--- Built Initial Population: $populationSize ---" }
         logger.info { "Cards in Library:\n" + population[0].library.getPrintableLibrary() }
     }
 
@@ -73,6 +74,7 @@ class EvolutionManager(private val populationSize: Int = 10,
             if (g >= numOfGenerations || hasConverged) {
                 break
             } else {
+                previousFitness = population[0].fitness
                 population = buildNextGeneration()
             }
         }
@@ -84,8 +86,11 @@ class EvolutionManager(private val populationSize: Int = 10,
         println("Mutation Chance: ${configs.mutationChance}")
         println("** Best From Final Generation **")
         printGenomeInfo(genList[genList.size - 1])
-        logger.info { "List of all Best in Generations" }
-        logger.info { genList.map { it.toString() }.joinToString("") { it } }
+        // Write all generations best decks in file
+        val allDecks = genList.map { it.toString() }.joinToString("") { it }
+        val f = File("Results.txt")
+        f.writeText("List of all Best in Generations")
+        f.writeText(allDecks)
     }
 
     /**
@@ -93,8 +98,8 @@ class EvolutionManager(private val populationSize: Int = 10,
      */
     private fun evaluatePopulationSingleDeck(gen: Int, deckBaseLine: String) {
         // Use ThreadPool to run multiple Forge AI Matches
-        val nthreads = 8
-        val threadPool = Executors.newFixedThreadPool(nthreads)
+        val nThreads = 12
+        val threadPool = Executors.newFixedThreadPool(nThreads)
         population.forEachIndexed { i, genome ->
             threadPool.execute {
                 genome.name = "${gen}_${i}_${genome.color}"
@@ -181,7 +186,8 @@ class EvolutionManager(private val populationSize: Int = 10,
         if (configs.elitism) newPopulation.add(population[0])
         // Breed and Mutate
         while (newPopulation.size < population.size) {
-            val childGenomes = BreedUtil.breed(selection(population).copy(), selection(population).copy())
+            val parents: List<Genome> = selectParents()
+            val childGenomes = BreedUtil.breed(parents[0], parents[1])
             childGenomes.forEach { g -> mutate(g) }
             newPopulation.addAll(childGenomes)
         }
@@ -190,6 +196,18 @@ class EvolutionManager(private val populationSize: Int = 10,
         return newPopulation
     }
 
+    /**
+     * Select a parent and make sure they are not the same
+     */
+    private fun selectParents(): List<Genome> {
+        var p1: Genome
+        var p2: Genome
+        do {
+            p1 = selection(population)
+            p2 = selection(population)
+        } while (p1.name == p2.name)
+        return listOf(p1.copy(), p2.copy())
+    }
 
     private fun mutate(genome: Genome): Genome {
         val myCardList = filterCardsByColor(genome.color, masterCardCatalog[LIMITED_EDITION_ALPHA]!!)
