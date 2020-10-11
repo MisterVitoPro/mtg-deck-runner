@@ -19,20 +19,14 @@ import java.util.concurrent.TimeUnit
 
 private val logger = KotlinLogging.logger {}
 
-/**
- * mutationChance   = Chance to mutate some of the cards
- * newChild         = New Generation will add brand new random child
- */
 class EvolutionManager(private val populationSize: Int = 10,
                        private val selection: (scoredPopulation: Collection<Genome>) -> Genome) {
 
-    // Of the scored population, top percentage we want to breed from
     private var population: MutableList<Genome> = mutableListOf()
     private var genList: MutableList<Genome> = mutableListOf()
     private var currentGeneration: Int = 1
 
-    // convergence
-
+    // We want to track improvement every generation
     private var previousFitness = 0
     private var improvementCounter = 0
     private val hasConverged: Boolean
@@ -72,6 +66,7 @@ class EvolutionManager(private val populationSize: Int = 10,
 
             // If converged or hit max gen, stop
             if (g >= numOfGenerations || hasConverged) {
+                logger.info { "Converged after No Improvement for $currentGeneration Generations." }
                 break
             } else {
                 previousFitness = population[0].fitness
@@ -122,7 +117,6 @@ class EvolutionManager(private val populationSize: Int = 10,
             threadPool.shutdown()
             threadPool.awaitTermination(10, TimeUnit.MINUTES)
         }
-//        }
     }
 
     /**
@@ -232,20 +226,16 @@ class EvolutionManager(private val populationSize: Int = 10,
         genome.library.print()
     }
 
-    private fun printGenerationResults(gen: Int, printWorst: Boolean = false) {
+    private fun printGenerationResults(gen: Int) {
         val sb = StringBuilder()
         sb.appendLine("\n-----[Generation #$gen]-----")
         sb.appendLine("**** Best Decks ****")
         sb.append(population[0].toString())
         println(sb)
-        if (printWorst) {
-            println("** Worst **")
-            printGenomeInfo(population[population.size - 1])
-        }
     }
 
     companion object {
-        private const val MAX_NO_IMPROVEMENT_COUNT = 3
+        private const val MAX_NO_IMPROVEMENT_COUNT = 10
         private const val NUM_OF_GAMES_IN_MATCH: Int = 7
     }
 }
