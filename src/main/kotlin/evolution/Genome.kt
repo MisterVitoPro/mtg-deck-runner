@@ -3,13 +3,15 @@ package evolution
 import Library
 import constants.Color
 
-class Genome(val library: Library = Library(), val color: Color = Color.RED) {
+class Genome(val library: Library = Library(),
+             val color: Color = Color.RED,
+             val generation: Int,
+             var name: String = "") {
 
-    var name: String = ""
     var fitness: Int = 0
 
     fun copy(): Genome {
-        return Genome(Library(library.cards.toMutableList()))
+        return Genome(Library(library.cards.toMutableList()), color, generation, name)
     }
 
     override fun toString(): String {
@@ -21,7 +23,7 @@ class Genome(val library: Library = Library(), val color: Color = Color.RED) {
                 .toString()
     }
 
-    fun print() {
-        println("Name: $name - Fitness: $fitness")
+    fun getNameFitnessString(): String {
+        return "Name: $name - Fitness: $fitness"
     }
 }

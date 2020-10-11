@@ -15,7 +15,7 @@ class Library(var cards: MutableList<MtgCard> = mutableListOf()) {
         if (cards.isEmpty()) {
             val myCardList: MutableList<MtgCard> = filterCardsByColor(Color.RED, callGetCardsBySet(LIMITED_EDITION_ALPHA)).toMutableList()
             // Random select starting land count
-            val range = 0..ThreadLocalRandom.current().nextInt(20, 26)
+            val range = 0..ThreadLocalRandom.current().nextInt(21, 27)
             for (i in range) {
                 cards.add(getCardByName("Mountain"))
             }
@@ -30,7 +30,6 @@ class Library(var cards: MutableList<MtgCard> = mutableListOf()) {
                 }
             }
             if (count >= maxTries) throw Exception("Too many tries to add cards. Rethink this shit!")
-            shuffle()
         }
     }
 
@@ -53,10 +52,6 @@ class Library(var cards: MutableList<MtgCard> = mutableListOf()) {
             val cardCount: Int? = cardList.groupingBy { it.name }.eachCount()[cardName]
             return cardCount == null || cardCount < 4
         }
-    }
-
-    fun shuffle() {
-        cards.shuffle()
     }
 
     fun print() {
