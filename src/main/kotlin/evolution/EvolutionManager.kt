@@ -22,6 +22,11 @@ private val logger = KotlinLogging.logger {}
 class EvolutionManager(private val populationSize: Int = 10,
                        private val selection: (scoredPopulation: Collection<Genome>) -> Genome) {
 
+    companion object {
+        private const val MAX_NO_IMPROVEMENT_COUNT = 15
+        private const val NUM_OF_GAMES_IN_MATCH: Int = 9
+    }
+
     private var population: MutableList<Genome> = mutableListOf()
     private var genList: MutableList<Genome> = mutableListOf()
     private var currentGeneration: Int = 1
@@ -234,9 +239,6 @@ class EvolutionManager(private val populationSize: Int = 10,
         println(sb)
     }
 
-    companion object {
-        private const val MAX_NO_IMPROVEMENT_COUNT = 10
-        private const val NUM_OF_GAMES_IN_MATCH: Int = 7
-    }
+
 }
 
