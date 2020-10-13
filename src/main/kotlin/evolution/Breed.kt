@@ -24,13 +24,14 @@ object BreedUtil {
 
         // Check if we should actually create children, or just send in a copy
         if (ThreadLocalRandom.current().nextDouble() <= configs.swapChance) {
-            logger.info { "Breeding: ${genome1.name} and ${genome2.name}" }
+            logger.debug { "Breeding: ${genome1.name}(${genome1.fitness}) and ${genome2.name}(${genome2.fitness})" }
             // We need to filter out any cards that would bring a card count > 4 (MTG rules for decks)
             // Take Genome 2 and remove and cards that would bring the card count > 4 when Genome 1 cards are added
-            val g1NonLands = genome1.library.nonLands().sortedBy { it.name }.toList()
+            // Sorting by CMC (Converted Mana Cost) except lands.
+            val g1NonLands = genome1.library.nonLands().sortedBy { it.cmc }.toList()
             val g1Lands = genome1.library.lands().sortedBy { it.name }.toList()
 
-            val g2NonLands = genome2.library.nonLands().sortedBy { it.name }.toList()
+            val g2NonLands = genome2.library.nonLands().sortedBy { it.cmc }.toList()
             val g2Lands = genome2.library.lands().sortedBy { it.name }.toList()
 
             // Split Lands
@@ -41,15 +42,13 @@ object BreedUtil {
             val gc1NonLand = splitCards(g1NonLands, g2NonLands)
             val gc2NonLand = splitCards(g2NonLands, g1NonLands)
 
-            val childGenome1 = Genome(Library(gc1Lands), generation = nextGenInt)
-            val childGenome2 = Genome(Library(gc2Lands), generation = nextGenInt)
+            val childGenome1 = Genome(genome1.color, Library(gc1Lands, genome1.color), generation = nextGenInt)
+            val childGenome2 = Genome(genome2.color, Library(gc2Lands, genome2.color), generation = nextGenInt)
 
             // Fill up rest of deck
             addNonLandToChild(childGenome1, gc1NonLand, gc2NonLand)
             addNonLandToChild(childGenome2, gc2NonLand, gc1NonLand)
 
-            logger.info { "Child 1:\n" + childGenome1.library.getPrintableLibrary() }
-            logger.info { "Child 2:\n" + childGenome2.library.getPrintableLibrary() }
             return listOf(childGenome1, childGenome2)
         } else {
             return listOf(genome1.copy(), genome2.copy())
@@ -61,7 +60,7 @@ object BreedUtil {
      */
     private fun splitCards(top: List<MtgCard>, bottom: List<MtgCard>): MutableList<MtgCard> {
         val cards = top.take(ceil(top.size / 2.0).toInt()).toMutableList()
-        cards.addAll(bottom.takeLast(bottom.size / 2))
+        cards.addAll(bottom.takeLast(ceil(bottom.size / 2.0).toInt()))
         return cards
     }
 
@@ -73,7 +72,7 @@ object BreedUtil {
      *  @param backUpFromOtherParent will be used in case it runs out
      */
     private fun addNonLandToChild(childGenome: Genome, cardsToAdd: List<MtgCard>, backUpFromOtherParent: List<MtgCard>) {
-        val p1Iterator = cardsToAdd.shuffled().iterator()
+        val p1Iterator = cardsToAdd.sortedBy { it.cmc }.iterator()
         val p2Iterator = backUpFromOtherParent.shuffled().iterator()
 
         while (childGenome.library.cards.size < 60) {
@@ -98,7 +97,7 @@ object BreedUtil {
                         .eachCount()
                         .any { c -> c.value > 4 }) {
             logger.error("** ERROR ** Greater than 4 Count")
-            logger.error(g.library.getPrintableLibrary())
+            logger.error(g.library.toString())
         }
     }
 }

@@ -1,3 +1,6 @@
+package utils
+
+import configs
 import evolution.Genome
 import io.magicthegathering.kotlinsdk.model.card.MtgCard
 import mu.KotlinLogging
@@ -15,7 +18,7 @@ object ForgeUtil {
         // Create Arg array to call for ProcessBuilder
         val args = mutableListOf<String>()
         args.add("java")
-        args.add("-Xmx4096m")
+        args.add("-Xmx2048m")
         args.add("-jar")
         args.add(configs.forgeJar)
         args.add("sim")
@@ -27,7 +30,7 @@ object ForgeUtil {
         if (quiet) args.add("-q")
 
         // Execute Simulation
-        logger.info { "Executing Forge using: ${args.joinToString(" ") { it }} " }
+        logger.debug { "Executing Forge using: ${args.joinToString(" ") { it }} " }
         val pb = ProcessBuilder(args).directory(File(configs.forgeDir))
         val p = pb.start()
         p.waitFor(60, TimeUnit.SECONDS)

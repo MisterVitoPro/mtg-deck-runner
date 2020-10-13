@@ -3,23 +3,23 @@ package evolution
 import Library
 import constants.Color
 
-class Genome(val library: Library = Library(),
-             val color: Color = Color.RED,
+class Genome(val color: Color = Color.GREEN,
+             val library: Library = Library(color = color),
              val generation: Int,
              var name: String = "") {
 
     var fitness: Int = 0
 
     fun copy(): Genome {
-        return Genome(Library(library.cards.toMutableList()), color, generation, name)
+        return Genome(color, Library(library.cards.toMutableList(), color), generation, name)
     }
 
     override fun toString(): String {
         return StringBuilder()
-                .append(this.name)
-                .append(" -- Fitness: ${this.fitness}")
+                .appendLine("==== [${this.name}] ====")
+                .append("Fitness: ${this.fitness}")
                 .appendLine(" -- Deck Size: ${this.library.cards.size}")
-                .appendLine(this.library.getPrintableLibrary())
+                .append(this.library.toString())
                 .toString()
     }
 

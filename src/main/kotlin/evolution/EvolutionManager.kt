@@ -1,21 +1,22 @@
 package evolution
 
-import ForgeUtil.executeForgeMatch
-import ForgeUtil.forgeOutput
-import ForgeUtil.getLastMatchWinInt
+import cards.CardFetcherUtils.filterCardsByColor
+import cards.masterCardCatalog
 import configs
 import constants.CardType
-import constants.LIMITED_EDITION_ALPHA
 import io.magicthegathering.kotlinsdk.model.card.MtgCard
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import utils.CardFetcherUtils.filterCardsByColor
 import utils.CardUtil.getRandomCard
-import utils.masterCardCatalog
+import utils.ForgeUtil.executeForgeMatch
+import utils.ForgeUtil.forgeOutput
+import utils.ForgeUtil.getLastMatchWinInt
+import utils.convertTimeToMinutesAndSeconds
 import java.io.File
 import java.lang.Math.random
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.system.measureTimeMillis
 
 private val logger = KotlinLogging.logger {}
 
@@ -23,7 +24,11 @@ class EvolutionManager(private val populationSize: Int = 10,
                        private val selection: (scoredPopulation: Collection<Genome>) -> Genome) {
 
     companion object {
-        private const val MAX_NO_IMPROVEMENT_COUNT = 15
+        // How many times a generation can continue with no improvement on its fitness
+        private const val MAX_NO_IMPROVEMENT_COUNT = 5
+
+        // How many games should be played in a single match
+        // NOTE: Keep this number Odd. Even numbers can end up with a DRAW.
         private const val NUM_OF_GAMES_IN_MATCH: Int = 9
     }
 
@@ -43,8 +48,9 @@ class EvolutionManager(private val populationSize: Int = 10,
         while (population.size < populationSize) {
             population.add(Genome(generation = currentGeneration))
         }
+        logger.info { "Running Selection: ${selection.toString()}" }
         logger.info { "--- Built Initial Population: $populationSize ---" }
-        logger.info { "Cards in Library:\n" + population[0].library.getPrintableLibrary() }
+        logger.info { "Cards in Library:\n" + population[0].library.toString() }
     }
 
     /**
@@ -55,7 +61,7 @@ class EvolutionManager(private val populationSize: Int = 10,
         for (g in 1..numOfGenerations) {
             currentGeneration = g
             //evaluatePopulation(g)
-            evaluatePopulationSingleDeck(g, "Alpha_Mono_Red")
+            evaluatePopulationSingleDeck(g, "modern_red_1")
             population.sortByDescending { genome -> genome.fitness }
             printGenerationResults(g)
             genList.add(population[0])
@@ -85,7 +91,7 @@ class EvolutionManager(private val populationSize: Int = 10,
         println("Elitism: ${configs.elitism}")
         println("Mutation Chance: ${configs.mutationChance}")
         println("** Best From Final Generation **")
-        printGenomeInfo(genList[genList.size - 1])
+        println(genList[genList.size - 1].toString())
         // Write all generations best decks in file
         val allDecks = genList.map { it.toString() }.joinToString("") { it }
         val f = File("Results.txt")
@@ -98,30 +104,34 @@ class EvolutionManager(private val populationSize: Int = 10,
      */
     private fun evaluatePopulationSingleDeck(gen: Int, deckBaseLine: String) {
         // Use ThreadPool to run multiple Forge AI Matches
-        val nThreads = 12
+        logger.info { "Starting Population Eval" }
+        val nThreads = 24
         val threadPool = Executors.newFixedThreadPool(nThreads)
-        population.forEachIndexed { i, genome ->
-            threadPool.execute {
-                genome.name = "${gen}_${i}_${genome.color}"
-                forgeOutput(genome)
-                val matchLogs = executeForgeMatch(genome.name, deckBaseLine, NUM_OF_GAMES_IN_MATCH)
+        val duration = measureTimeMillis {
+            population.forEachIndexed { i, genome ->
+                threadPool.execute {
+                    genome.name = "${gen}_${i}_${genome.color}"
+                    forgeOutput(genome)
+                    val matchLogs = executeForgeMatch(genome.name, deckBaseLine, NUM_OF_GAMES_IN_MATCH)
 
-                for (n in matchLogs.indices.reversed()) {
-                    if (matchLogs[n].contains("Match")) {
-                        val genomeFit = getLastMatchWinInt(matchLogs[n], genome.name)
-                        val baseFit = getLastMatchWinInt(matchLogs[n], deckBaseLine)
-                        val matchWin = if (genomeFit > baseFit) 1 else 0
-                        genome.fitness = fitnessCalc(genomeFit, baseFit, matchWin)
-                        logger.info { genome.getNameFitnessString() }
-                        break
+                    for (n in matchLogs.indices.reversed()) {
+                        if (matchLogs[n].contains("Match")) {
+                            val genomeFit = getLastMatchWinInt(matchLogs[n], genome.name)
+                            val baseFit = getLastMatchWinInt(matchLogs[n], deckBaseLine)
+                            val matchWin = if (genomeFit > baseFit) 1 else 0
+                            genome.fitness = fitnessCalc(genomeFit, baseFit, matchWin)
+                            logger.debug { genome.getNameFitnessString() }
+                            break
+                        }
                     }
                 }
             }
+            runBlocking {
+                threadPool.shutdown()
+                threadPool.awaitTermination(10, TimeUnit.MINUTES)
+            }
         }
-        runBlocking {
-            threadPool.shutdown()
-            threadPool.awaitTermination(10, TimeUnit.MINUTES)
-        }
+        logger.info { "Population eval took ${convertTimeToMinutesAndSeconds(duration)}" }
     }
 
     /**
@@ -209,7 +219,7 @@ class EvolutionManager(private val populationSize: Int = 10,
     }
 
     private fun mutate(genome: Genome): Genome {
-        val myCardList = filterCardsByColor(genome.color, masterCardCatalog[LIMITED_EDITION_ALPHA]!!)
+        val myCardList = filterCardsByColor(genome.color, masterCardCatalog[configs.mtgSet]!!)
         for (i in 0 until genome.library.cards.size) {
             if (genome.library.cards[i].types.map { it.toLowerCase() }.contains(CardType.LAND.name.toLowerCase())) continue
             if (random() <= configs.mutationChance) {
@@ -224,11 +234,6 @@ class EvolutionManager(private val populationSize: Int = 10,
             }
         }
         return genome.copy()
-    }
-
-    private fun printGenomeInfo(genome: Genome) {
-        println(genome.toString())
-        genome.library.print()
     }
 
     private fun printGenerationResults(gen: Int) {
