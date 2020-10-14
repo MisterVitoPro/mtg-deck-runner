@@ -3,7 +3,7 @@ package evolution
 import Library
 import constants.Color
 
-class Genome(val color: Color = Color.GREEN,
+class Genome(val color: Color = Color.RED,
              val library: Library = Library(color = color),
              val generation: Int,
              var name: String = "") {

@@ -1,10 +1,10 @@
 package constants
 
-enum class Color {
-    WHITE,
-    BLUE,
-    BLACK,
-    RED,
-    GREEN,
-    COLORLESS
+enum class Color(val land: String) {
+    WHITE("Plains"),
+    BLUE("Island"),
+    BLACK("Swamp"),
+    RED("Mountain"),
+    GREEN("Forest"),
+    COLORLESS("ANY")
 }

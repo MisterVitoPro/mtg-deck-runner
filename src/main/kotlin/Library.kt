@@ -18,7 +18,7 @@ class Library(var cards: MutableList<MtgCard> = mutableListOf(), val color: Colo
             // Randomly select number of lands in deck
             val range = 0..ThreadLocalRandom.current().nextInt(21, 26)
             for (i in range) {
-                cards.add(getCardByName("Mountain"))
+                cards.add(getCardByName(color.land))
             }
 
             // Populate the rest of the deck with non-land cards
